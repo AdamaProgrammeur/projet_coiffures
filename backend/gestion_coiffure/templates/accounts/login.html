@@ -29,7 +29,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     };
 
     try {
-        // 1️⃣ Connexion JWT via email
+        // 1️⃣ Connexion via JWT
         const res = await fetch("{% url 'accounts:api_token_obtain_pair' %}", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -42,9 +42,9 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
 
-        // 2️⃣ Récupérer le profil de l'utilisateur
-        const profileRes = await fetch("{% url 'accounts:login' %}", {
-            headers: { 
+        // 2️⃣ Récupérer le profil de l'utilisateur via DRF
+        const profileRes = await fetch("{% url 'accounts:profile_api' %}", {
+            headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + data.access
             }
@@ -54,12 +54,12 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 
         const profile = await profileRes.json();
 
-        // 3️⃣ Redirection selon le rôle
+        // 3️⃣ Redirection selon rôle
         if (profile.is_admin) {
             window.location.href = "/dashboard/";
         } else if (profile.role === "COIFFEUR") {
-            window.location.href = "/file_coiffeur/";
-        } else if (profile.role === "Receptionniste") {
+            window.location.href = "/gestion_file/";
+        } else if (profile.role === "RECEPTIONNISTE") {
             window.location.href = "/clients_file/";
         } else {
             alert("Rôle inconnu, contactez l'administrateur !");
