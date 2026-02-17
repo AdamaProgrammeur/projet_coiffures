@@ -1,0 +1,105 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row g-3">
+
+    <!-- Clients -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info text-white p-3">
+            <div class="inner">
+                <h3 id="totalClients">0</h3>
+                <p>Clients Total</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-users"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- En Attente -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning text-dark p-3">
+            <div class="inner">
+                <h3 id="totalAttente">0</h3>
+                <p>En Attente</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-hourglass-start"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- En Cours -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary text-white p-3">
+            <div class="inner">
+                <h3 id="totalEncours">0</h3>
+                <p>En Cours</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-scissors"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminés -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success text-white p-3">
+            <div class="inner">
+                <h3 id="totalTermine">0</h3>
+                <p>Terminés</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-3 mt-3">
+
+    <!-- Paiements Aujourd'hui -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-secondary text-white p-3">
+            <div class="inner">
+                <h3 id="paiementsToday">0</h3>
+                <p>Paiements Aujourd'hui</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coiffeurs Total -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-dark text-white p-3">
+            <div class="inner">
+                <h3 id="totalCoiffeurs">0</h3>
+                <p>Coiffeurs Total</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Réceptionnistes -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger text-white p-3">
+            <div class="inner">
+                <h3 id="totalReceptions">0</h3>
+                <p>Réceptionnistes</p>
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-user-clock"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

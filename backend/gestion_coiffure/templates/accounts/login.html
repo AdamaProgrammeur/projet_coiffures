@@ -1,0 +1,73 @@
+{% extends "layout/base_login_auth.html" %}
+
+{% block content %}
+<div class="login-box">
+    <div class="card card-outline card-primary">
+        <div class="card-header text-center"><b>Salon Login</b></div>
+        <div class="card-body">
+            <form id="loginForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="Email" required>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Mot de passe" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value
+    };
+
+    try {
+        // 1️⃣ Connexion JWT via email
+        const res = await fetch("{% url 'accounts:api_token_obtain_pair' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Identifiants incorrects !");
+
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+
+        // 2️⃣ Récupérer le profil de l'utilisateur
+        const profileRes = await fetch("{% url 'accounts:login' %}", {
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + data.access
+            }
+        });
+
+        if (!profileRes.ok) throw new Error("Impossible de charger le profil");
+
+        const profile = await profileRes.json();
+
+        // 3️⃣ Redirection selon le rôle
+        if (profile.is_admin) {
+            window.location.href = "/dashboard/";
+        } else if (profile.role === "COIFFEUR") {
+            window.location.href = "/file_coiffeur/";
+        } else if (profile.role === "Receptionniste") {
+            window.location.href = "/clients_file/";
+        } else {
+            alert("Rôle inconnu, contactez l'administrateur !");
+        }
+
+    } catch (err) {
+        alert(err.message);
+    }
+});
+</script>
+{% endblock content %}

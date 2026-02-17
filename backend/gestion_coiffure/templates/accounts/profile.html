@@ -1,0 +1,79 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h2>Profile</h2>
+<form id="profileForm">
+  <div class="mb-3">
+      <label>Email</label>
+      <input type="email" class="form-control" id="profileEmail" value="">
+  </div>
+  <div class="mb-3">
+      <label>Nom complet</label>
+      <input type="text" class="form-control" id="profileNom" value="">
+  </div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+
+<script>
+async function loadProfile() {
+    try {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        const res = await fetch("{% url 'profile_api' %}", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "same-origin"
+        });
+
+        if (!res.ok) throw new Error("Impossible de charger le profil");
+
+        const data = await res.json();
+
+        document.getElementById("profileEmail").value = data.email || "";
+        document.getElementById("profileNom").value = data.nom_complet || "";
+        if (data.is_admin) {
+            document.getElementById("adminOnly").style.display = "block";
+        }
+
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+document.getElementById("profileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        email: document.getElementById("profileEmail").value,
+        nom_complet: document.getElementById("profileNom").value,
+        // max_postes: document.getElementById("profileMaxPostes").value  // si utilisé
+    };
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+    try {
+        const res = await fetch("{% url 'profile_api' %}", {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+            credentials: "same-origin",
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Impossible de mettre à jour le profil");
+
+        alert("Profil mis à jour avec succès !");
+        loadProfile(); // recharge les infos
+
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+// Charger les infos au chargement de la page
+window.addEventListener("DOMContentLoaded", loadProfile);
+</script>
+{% endblock %}

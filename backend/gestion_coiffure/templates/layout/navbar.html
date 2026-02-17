@@ -1,0 +1,59 @@
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+
+        <a class="navbar-brand fw-bold" href="{% url 'dashboard:index' %}">
+            💈 Salon
+        </a>
+
+        <!-- Partie droite -->
+        <div class="ms-auto d-flex align-items-center">
+
+            {% if user.is_authenticated %}
+
+                <!-- Menu utilisateur avec dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle"></i> {{ user.username }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <!-- Lien vers le profil pour tous -->
+                        <li>
+                            <a class="dropdown-item" href="{% url 'profile_page' %}">
+                                <i class="bi bi-person"></i> Mon profil
+                            </a>
+                        </li>
+                        {% if user.is_superuser and user == 'admin' %}
+                        <!-- Options admin -->
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dashboard_page' %}">
+                                <i class="bi bi-speedometer2"></i> Dashboard Admin
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- Déconnexion -->
+                        <li>
+                            <form method="post" action="{% url 'logout_page' %}" class="px-3 py-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                    <i class="bi bi-box-arrow-right"></i> Déconnexion
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+
+            {% else %}
+
+                <a href="{% url 'login_page' %}" class="btn btn-outline-primary btn-sm">
+                    Connexion
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+</nav>
+{% endblock content %}
