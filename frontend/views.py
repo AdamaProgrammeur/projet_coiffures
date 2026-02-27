@@ -51,4 +51,4 @@ def crud_paiement_page(request):
 
 
 def setting(request):
-    return render(request, "setting.html")
+    return render(request, "accounts/setting.html")
