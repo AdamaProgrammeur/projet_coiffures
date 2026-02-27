@@ -1,0 +1,223 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-5 text-center text-dark fw-bold" style="font-size:2.5rem;">Paramètres du Salon & Sécurité</h1>
+
+<div class="container">
+
+    <div class="row g-4">
+
+        <!-- Logo du Salon -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg rounded-4 p-4 bg-light bg-opacity-75">
+                <h4 class="mb-3 text-primary fw-semibold">Logo du Salon</h4>
+                <p>Téléversez le logo du salon pour l'afficher dans la navbar.</p>
+                <div class="text-center mb-3">
+                    <img id="logoPreview" src="/static/images/default_logo.png" alt="Logo"
+                        class="img-fluid rounded-circle border border-2 border-primary" style="max-width:150px;">
+                </div>
+                <input type="file" id="logoInput" class="form-control mb-3" accept="image/*">
+                <button id="saveLogoBtn" class="btn btn-primary w-100 fw-semibold">Enregistrer le Logo</button>
+            </div>
+        </div>
+
+        <!-- Infos personnelles -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg rounded-4 p-4 bg-light bg-opacity-75">
+                <h4 class="mb-3 text-success fw-semibold">Informations personnelles</h4>
+                <form id="profileForm" novalidate>
+                    <div class="mb-3">
+                        <label for="name" class="form-label fw-semibold">Nom complet</label>
+                        <input type="text" class="form-control rounded-pill" id="name" placeholder="Nom complet" required>
+                        <div class="invalid-feedback">Veuillez entrer votre nom.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">Email</label>
+                        <input type="email" class="form-control rounded-pill" id="email" placeholder="Email" required>
+                        <div class="invalid-feedback">Veuillez entrer un email valide.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maxPoste" class="form-label fw-semibold">Nombre max de postes</label>
+                        <input type="number" class="form-control rounded-pill" id="maxPoste" min="1" required>
+                        <div class="invalid-feedback">Veuillez entrer un nombre valide.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label fw-semibold">Rôle</label>
+                        <select id="role" class="form-select rounded-pill">
+                            <option value="COIFFEUR">Coiffeur</option>
+                            <option value="RECEPTIONNISTE">Réceptionniste</option>
+                            <option value="ADMIN">Administrateur</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-semibold">Enregistrer</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Changement de mot de passe -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg rounded-4 p-4 bg-light bg-opacity-75">
+                <h4 class="mb-3 text-warning fw-semibold">Sécurité / Changer le mot de passe</h4>
+                <form id="passwordForm" novalidate>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label fw-semibold">Mot de passe actuel</label>
+                        <input type="password" class="form-control rounded-pill" id="currentPassword" placeholder="Mot de passe actuel" required>
+                        <div class="invalid-feedback">Veuillez entrer votre mot de passe actuel.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fw-semibold">Nouveau mot de passe</label>
+                        <input type="password" class="form-control rounded-pill" id="newPassword" placeholder="Nouveau mot de passe" minlength="6" required>
+                        <div class="invalid-feedback">Le mot de passe doit contenir au moins 6 caractères.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label fw-semibold">Confirmer le nouveau mot de passe</label>
+                        <input type="password" class="form-control rounded-pill" id="confirmPassword" placeholder="Confirmer le mot de passe" required>
+                        <div class="invalid-feedback">Les mots de passe ne correspondent pas.</div>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">Changer le mot de passe</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* Effet de survol sur les cartes */
+.card:hover {
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+/* Ombre plus douce */
+.card {
+    transition: box-shadow 0.3s ease;
+}
+
+/* Input focus */
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.5);
+}
+
+/* Boutons arrondis et hover */
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const logoInput = document.getElementById("logoInput");
+    const logoPreview = document.getElementById("logoPreview");
+    const saveLogoBtn = document.getElementById("saveLogoBtn");
+    const profileForm = document.getElementById("profileForm");
+    const passwordForm = document.getElementById("passwordForm");
+
+    // Aperçu logo avant upload
+    logoInput.addEventListener("change", function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => logoPreview.src = e.target.result;
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Enregistrer logo
+    saveLogoBtn.addEventListener("click", async () => {
+        const file = logoInput.files[0];
+        if (!file) return alert("Veuillez choisir un fichier.");
+        const formData = new FormData();
+        formData.append("logo", file);
+
+        const token = localStorage.getItem("access_token");
+        try {
+            const res = await fetch("/api/settings/logo/", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+            });
+            if (!res.ok) throw new Error("Erreur lors de l'enregistrement du logo.");
+            alert("Logo enregistré avec succès !");
+        } catch(err) {
+            console.error(err);
+            alert(err.message);
+        }
+    });
+
+    // Enregistrer infos personnelles
+    profileForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        profileForm.classList.add("was-validated");
+        if (!profileForm.checkValidity()) return;
+
+        const data = {
+            name: document.getElementById("name").value,
+            email: document.getElementById("email").value,
+            max_poste: document.getElementById("maxPoste").value,
+            role: document.getElementById("role").value
+        };
+
+        const token = localStorage.getItem("access_token");
+        try {
+            const res = await fetch("/api/settings/profile/", {
+                method: "PUT",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error("Erreur lors de l'enregistrement des infos.");
+            alert("Informations enregistrées avec succès !");
+        } catch(err) {
+            console.error(err);
+            alert(err.message);
+        }
+    });
+
+    // Changement mot de passe
+    passwordForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        passwordForm.classList.add("was-validated");
+
+        const current = document.getElementById("currentPassword").value;
+        const newP = document.getElementById("newPassword").value;
+        const confirm = document.getElementById("confirmPassword").value;
+
+        if (!passwordForm.checkValidity()) return;
+        if (newP !== confirm) {
+            document.getElementById("confirmPassword").setCustomValidity("Les mots de passe ne correspondent pas.");
+            passwordForm.classList.add("was-validated");
+            return;
+        } else {
+            document.getElementById("confirmPassword").setCustomValidity("");
+        }
+
+        const token = localStorage.getItem("access_token");
+        try {
+            const res = await fetch("/api/settings/change-password/", {
+                method: "PUT",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ current_password: current, new_password: newP })
+            });
+            if (!res.ok) throw new Error("Erreur lors du changement de mot de passe.");
+            alert("Mot de passe changé avec succès !");
+            passwordForm.reset();
+        } catch(err) {
+            console.error(err);
+            alert(err.message);
+        }
+    });
+
+});
+</script>
+
+{% endblock %}

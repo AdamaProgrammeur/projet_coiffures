@@ -1,0 +1,230 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h2>File d'Attente</h2>
+
+<!-- Choix du client -->
+<div class="mb-3">
+    <label for="clientSelect" class="form-label">Choisir un client :</label>
+    <select id="clientSelect" class="form-select">
+        <option value="">-- Sélectionner un client --</option>
+        {% for client in clients %}
+        <option value="{{ client.id }}">{{ client.nom }} {{ client.prenom }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Liste des services -->
+<div class="row" id="servicesContainer"></div>
+
+<hr>
+
+<h3>File d'Attente</h3>
+<table class="table table-striped" id="fileTable">
+    <thead>
+        <tr>
+            <th>Nom Client</th>
+            <th>Service</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Modal Modifier File -->
+<div class="modal fade" id="editFileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editFileForm">
+                <div class="modal-header">
+                    <h5>Modifier File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Client :</label>
+                    <select id="editClient" class="form-select" required>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.nom }} {{ client.prenom }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label>Service :</label>
+                    <select id="editService" class="form-select" required>
+                        {% for service in services %}
+                        <option value="{{ service.id }}">{{ service.nom }} ({{ service.prix }} FCFA)</option>
+                        {% endfor %}
+                    </select>
+
+                    <input type="hidden" id="editFileId">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning">Modifier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const token = localStorage.getItem("access_token");
+    if (!token) return alert("Token manquant !");
+
+    let servicesList = [];
+    let fileList = [];
+
+    // 🔹 Charger tous les services
+    function loadServices() {
+        fetch("/api/services/", { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            servicesList = data;
+            renderServices([]);
+        });
+    }
+
+    // 🔹 Afficher services filtrés selon client
+    function renderServices(clientId) {
+        const container = document.getElementById("servicesContainer");
+        container.innerHTML = "";
+        if (!clientId) return;
+
+        servicesList.forEach(service => {
+            const card = document.createElement("div");
+            card.className = "col-md-3 mb-3";
+            card.innerHTML = `
+                <div class="card h-100">
+                    ${service.image ? `<img src="${service.image}" class="card-img-top" style="height:150px; object-fit:cover;">` : ''}
+                    <div class="card-body">
+                        <h5 class="card-title">${service.nom}</h5>
+                        <p class="card-text">${service.prix} FCFA</p>
+                        <button class="btn btn-success w-100" onclick="addToFile(${clientId}, ${service.id}, '${service.nom}', ${service.prix})">
+                            Ajouter
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // 🔹 Charger la file depuis la DB
+    function loadFile() {
+        fetch('/api/file_attente/', { headers: { "Authorization": "Bearer " + token } })
+        .then(res => res.json())
+        .then(data => {
+            fileList = data;
+            renderFile();
+        });
+    }
+
+    // 🔹 Ajouter à la file (POST)
+    window.addToFile = function(clientId, serviceId, serviceName) {
+        fetch('/api/file_attente/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                client: clientId,
+                service: serviceId,
+            })
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw err; });
+            return res.json();
+        })
+        .then(data => {
+            fileList.push(data);
+            renderFile();
+        })
+        .catch(err => alert("Erreur ajout file : " + JSON.stringify(err)));
+    }
+
+    // 🔹 Afficher la file
+    function renderFile() {
+        const tbody = document.querySelector("#fileTable tbody");
+        tbody.innerHTML = "";
+        fileList.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.client_name || ''} ${item.client_prenom || ''}</td>
+                    <td>${item.service_name || ''}</td>
+                    <td>${item.statut || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="openEditFile(${item.id})">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFile(${item.id})">🗑</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // 🔹 Ouvrir modal pour modifier
+    window.openEditFile = function(id) {
+        const item = fileList.find(f => f.id === id);
+        if (!item) return;
+
+        document.getElementById("editFileId").value = item.id;
+        document.getElementById("editClient").value = item.client || '';
+        document.getElementById("editService").value = item.service || '';
+        new bootstrap.Modal(document.getElementById("editFileModal")).show();
+    }
+
+    // 🔹 Modifier file (PATCH)
+    document.getElementById("editFileForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const id = parseInt(document.getElementById("editFileId").value);
+        const client = parseInt(document.getElementById("editClient").value);
+        const service = parseInt(document.getElementById("editService").value);
+
+        fetch(`/api/file_attente/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({id, client, service })
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw err; });
+            return res.json();
+        })
+        .then(data => {
+            const index = fileList.findIndex(f => f.id === id);
+            fileList[index] = data;
+            renderFile();
+            bootstrap.Modal.getInstance(document.getElementById("editFileModal")).hide();
+        })
+        .catch(err => alert("Erreur modification : " + JSON.stringify(err)));
+    });
+
+    // 🔹 Supprimer file (DELETE)
+    window.deleteFile = function(id) {
+        if(!confirm("Supprimer cet élément de la file ?")) return;
+        fetch(`/api/file_attente/${id}/`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => {
+            if (!res.ok) return res.json().then(err => { throw err; });
+            fileList = fileList.filter(f => f.id !== id);
+            renderFile();
+        })
+        .catch(err => alert("Erreur suppression : " + JSON.stringify(err)));
+    }
+
+    // 🔹 Filtrer services quand client choisi
+    document.getElementById("clientSelect").addEventListener("change", function() {
+        renderServices(this.value);
+    });
+
+    // 🔹 Initial load
+    loadServices();
+    loadFile();
+});
+</script>
+{% endblock %}

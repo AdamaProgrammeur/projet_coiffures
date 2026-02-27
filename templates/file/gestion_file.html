@@ -1,0 +1,174 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-4">File d'Attente</h1>
+<button class="btn btn-sm btn-success">
+                    <a href="{% url 'crud_paiement_page' %}" style="color: white; text-decoration: none;">
+                    Gerer les Paiements
+                    </a>
+                </button>
+<table class="table table-hover table-bordered text-center align-middle" id="fileTable">
+    <thead class="table-light">
+        <tr>
+            <th>Rang</th>
+            <th>Client</th>
+            <th>Service</th>
+            <th>Statut</th>
+            <th>Heure</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in files %}
+        <tr data-id="{{ file.id }}">
+            <td>{{ forloop.counter }}</td>
+            <td>{{ file.client.nom }} {{ file.client.prenom }}</td>
+            <td>{{ file.service.nom }}</td>
+            <td class="statut">
+                {% if file.statut == "EN_ATTENTE" %}
+                    <span class="badge bg-warning text-dark">En attente</span>
+                {% elif file.statut == "EN_COURS" %}
+                    <span class="badge bg-primary">En cours</span>
+                {% elif file.statut == "TERMINE" %}
+                    <span class="badge bg-success">Terminé</span>
+                {% endif %}
+            </td>
+            <td>{{ file.heure_arrivee }}</td>
+            <td class="actions">
+                <!-- Deux boutons toujours visibles -->
+                <button class="btn btn-sm btn-success start-btn" {% if file.statut != "EN_ATTENTE" %}disabled{% endif %}>
+                    Commencer
+                </button>
+                <button class="btn btn-sm btn-warning finish-btn" {% if file.statut != "EN_COURS" %}disabled{% endif %}>
+                    Terminer
+                </button>
+
+                
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">Aucune file en attente</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const token = localStorage.getItem("access_token");
+    if (!token) return alert("Token manquant !");
+
+    function updateRow(row, newStatus) {
+        const statusTd = row.querySelector(".statut");
+        const startBtn = row.querySelector(".start-btn");
+        const finishBtn = row.querySelector(".finish-btn");
+
+        if (newStatus === "EN_COURS") {
+            statusTd.innerHTML = '<span class="badge bg-primary">En cours</span>';
+            startBtn.disabled = true;
+            finishBtn.disabled = false;
+        } 
+        else if (newStatus === "TERMINE") {
+            statusTd.innerHTML = '<span class="badge bg-success">Terminé</span>';
+            startBtn.disabled = true;
+            finishBtn.disabled = true;
+        } 
+        else if (newStatus === "EN_ATTENTE") {
+            statusTd.innerHTML = '<span class="badge bg-warning text-dark">En attente</span>';
+            startBtn.disabled = false;
+            finishBtn.disabled = true;
+        }
+    }
+
+    // ==========================
+    // COMMENCER
+    // ==========================
+    document.querySelectorAll(".start-btn").forEach(btn => {
+        btn.addEventListener("click", async function() {
+            const row = this.closest("tr");
+            const fileId = row.dataset.id;
+
+            try {
+                const response = await fetch(`/api/file_attente/${fileId}/commencer/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // ❌ Si erreur (ex: max poste atteint)
+                    alert(data.error || "Erreur lors du démarrage.");
+                    return; // 🚫 On ne change PAS le statut
+                }
+
+                // ✅ Succès → on met le vrai statut renvoyé
+                updateRow(row, data.file_attente.statut);
+
+                // Optionnel : afficher places disponibles
+                if (data.places_disponibles !== undefined) {
+                    console.log("Places disponibles:", data.places_disponibles);
+
+                    // Désactiver tous les boutons si plus de place
+                    if (data.places_disponibles <= 0) {
+                        document.querySelectorAll(".start-btn").forEach(b => b.disabled = true);
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Erreur serveur.");
+            }
+        });
+    });
+
+    // ==========================
+    // TERMINER
+    // ==========================
+    document.querySelectorAll(".finish-btn").forEach(btn => {
+        btn.addEventListener("click", async function() {
+            const row = this.closest("tr");
+            const fileId = row.dataset.id;
+
+            try {
+                const response = await fetch(`/api/file_attente/${fileId}/terminer/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(data.error || "Erreur lors de la fin du service.");
+                    return; // 🚫 Ne rien modifier
+                }
+
+                // ✅ Mise à jour correcte
+                updateRow(row, data.file_attente.statut);
+
+                // Réactiver les boutons si une place s’est libérée
+                if (data.places_disponibles > 0) {
+                    document.querySelectorAll(".start-btn").forEach(b => {
+                        if (b.closest("tr").querySelector(".statut").textContent.includes("En attente")) {
+                            b.disabled = false;
+                        }
+                    });
+                }
+
+            } catch (err) {
+                console.error(err);
+                
+                alert("Erreur serveur.");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

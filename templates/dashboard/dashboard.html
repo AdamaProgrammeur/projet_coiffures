@@ -1,0 +1,181 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+<h1 class="mb-4 text-center" style="font-weight: 700; color: #333;">Dashboard</h1>
+
+<div class="row g-4">
+
+    <!-- Clients -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-info text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-users fa-3x mb-2"></i>
+                <h3 id="totalClients" class="mb-1">0</h3>
+                <p class="mb-0">Clients Total</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- En Attente -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-warning text-dark p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-hourglass-start fa-3x mb-2"></i>
+                <h3 id="totalAttente" class="mb-1">0</h3>
+                <p class="mb-0">En Attente</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- En Cours -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-primary text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-scissors fa-3x mb-2"></i>
+                <h3 id="totalEncours" class="mb-1">0</h3>
+                <p class="mb-0">En Cours</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminés -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-success text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-check fa-3x mb-2"></i>
+                <h3 id="totalTermine" class="mb-1">0</h3>
+                <p class="mb-0">Terminés</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row g-4 mt-3">
+
+    <!-- Paiements Aujourd'hui - Nombre -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-secondary text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-money-bill-wave fa-3x mb-2"></i>
+                <h3 id="paiementsToday" class="mb-1">0</h3>
+                <p class="mb-0">Paiements Aujourd'hui</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paiements Aujourd'hui - Montant -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-success text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-coins fa-3x mb-2"></i>
+                <h3 id="paiementsTotalAmount" class="mb-1">0 FCFA</h3>
+                <p class="mb-0">Somme Paiements Aujourd'hui</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Administrateurs -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-danger text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-user-gear fa-3x mb-2"></i>
+                <h3 id="totalAdmins" class="mb-1">0</h3>
+                <p class="mb-0">Administrateurs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coiffeurs -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-dark text-white p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-user-tie fa-3x mb-2"></i>
+                <h3 id="totalCoiffeurs" class="mb-1">0</h3>
+                <p class="mb-0">Coiffeurs Total</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Réceptionnistes -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card dashboard-card bg-warning text-dark p-4">
+            <div class="card-body text-center">
+                <i class="fa-solid fa-user-clock fa-3x mb-2"></i>
+                <h3 id="totalReceptions" class="mb-1">0</h3>
+                <p class="mb-0">Réceptionnistes</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* Styles pour les cartes du dashboard */
+.dashboard-card {
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: rgba(255, 255, 255, 0.1); /* Légèrement transparent */
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.dashboard-card i {
+    color: #fff;
+}
+
+.dashboard-card h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.dashboard-card p {
+    font-size: 1rem;
+    font-weight: 500;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+    const token = localStorage.getItem("access_token");
+
+    async function fetchJSON(url) {
+        const res = await fetch(url, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        if (!res.ok) throw new Error(`Erreur API: ${res.status}`);
+        return await res.json();
+    }
+
+    try {
+        // ---------- Clients ----------
+        const clients = await fetchJSON("/api/file_attente/");
+        document.getElementById("totalClients").textContent = clients.length;
+        document.getElementById("totalAttente").textContent = clients.filter(c => c.statut === "EN_ATTENTE").length;
+        document.getElementById("totalEncours").textContent = clients.filter(c => c.statut === "EN_COURS").length;
+        document.getElementById("totalTermine").textContent = clients.filter(c => c.statut === "TERMINE").length;
+
+        // ---------- Paiements aujourd'hui ----------
+        const paiements = await fetchJSON("/api/paiements/today/");
+        document.getElementById("paiementsToday").textContent = paiements.length;
+        const montant = paiements.reduce((sum, p) => sum + Number(p.montant || 0), 0);
+        document.getElementById("paiementsTotalAmount").textContent = montant.toLocaleString("fr-FR") + " FCFA";
+
+        // ---------- Utilisateurs ----------
+        const users = await fetchJSON("/accounts/api/users/");
+        document.getElementById("totalCoiffeurs").textContent = users.filter(u => u.role.toLowerCase() === "coiffeur").length;
+        document.getElementById("totalReceptions").textContent = users.filter(u => u.role.toLowerCase() === "receptionniste").length;
+        document.getElementById("totalAdmins").textContent = users.filter(u => u.role.toLowerCase() === "admin").length;
+
+    } catch (err) {
+        console.error(err);
+        alert("Impossible de charger le dashboard !");
+    }
+});
+</script>
+
+{% endblock %}

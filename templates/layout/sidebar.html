@@ -1,0 +1,43 @@
+<div class="sidebar" id="sidebar">
+    <a href="{% url 'dashboard_view' %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="{% url 'gestion_users' %}"><i class="bi bi-people"></i> Gestion Utilisateurs</a>
+    <a href="{% url 'crud_service_page' %}"><i class="bi bi-briefcase"></i> Services</a>
+    <a href="{% url 'crud_client_page' %}"><i class="bi bi-people"></i> Clients</a>
+    <a href="{% url 'crud_file_page' %}"><i class="bi bi-people"></i> File</a>
+    <a href="{% url 'gestion_file' %}"><i class="bi bi-people"></i> Gestion File</a>
+    <a href="{% url 'crud_paiement_page' %}"><i class="bi bi-cash-stack"></i> Paiements</a>
+    <a href="{% url 'setting' %}"><i class="bi bi-cash-stack"></i> Settings</a>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function() {
+    const token = localStorage.getItem("access_token");
+    const sidebar = document.getElementById("sidebar");
+
+    // Si pas de token, supprimer sidebar
+    if (!token) {
+        if(sidebar) sidebar.remove();
+        return;
+    }
+
+    try {
+        const res = await fetch("/accounts/api/profile/", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        if (!res.ok) throw new Error("Non autorisé");
+
+        const user = await res.json();
+
+        // Si rôle différent de ADMIN, supprimer sidebar
+        if (user.role !== "ADMIN") {
+            if(sidebar) sidebar.remove();
+        }
+
+    } catch (err) {
+        console.error(err);
+        // En cas d'erreur (token expiré, etc.), supprimer sidebar par sécurité
+        if(sidebar) sidebar.remove();
+    }
+});
+</script>
